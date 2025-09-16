@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CN CAD MASTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- Scroll Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0a1e;
+        }
+        .main-background {
+             background-image: linear-gradient(to bottom right, #1e1b4b, #312e81, #4f46e5);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .form-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: #a78bfa; /* violet-400 */
+            box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.5);
+        }
+        .btn-primary { background-color: #8b5cf6; transition: background-color 0.3s ease; }
+        .btn-primary:hover { background-color: #7c3aed; }
+        .btn-secondary { background-color: #4f46e5; transition: background-color 0.3s ease; }
+        .btn-secondary:hover { background-color: #4338ca; }
+        .table-header { background: rgba(255, 255, 255, 0.15); }
+        .table-row:hover { background: rgba(255, 255, 255, 0.08); }
+    </style>
+</head>
+<body class="text-white min-h-screen antialiased">
+
+    <!-- Login View -->
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4 main-background">
+        <div class="w-full max-w-md" data-aos="zoom-in">
+            <form id="login-form" class="glass-card rounded-2xl p-8 shadow-2xl space-y-6">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">
+                        CN CAD LOG
+                    </h1>
+                    <p class="text-violet-200 mt-2">Please sign in to continue</p>
+                </div>
+                
+                <div>
+                    <label for="email" class="text-sm font-medium text-violet-200">Email</label>
+                    <input type="email" id="login-email" class="form-input w-full p-3 rounded-lg mt-1" autocomplete="off" required>
+                </div>
+
+                <div>
+                    <label for="password" class="text-sm font-medium text-violet-200">Password</label>
+                    <input type="password" id="login-password" class="form-input w-full p-3 rounded-lg mt-1" autocomplete="new-password" required>
+                </div>
+
+                <p id="login-error" class="text-sm text-center text-red-400 hidden">Invalid credentials. Please try again.</p>
+
+                <button type="submit" class="w-full btn-primary text-white font-bold py-3 px-4 rounded-lg shadow-md text-lg">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard View (Initially Hidden) -->
+    <div id="dashboard-view" class="hidden main-background">
+        <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+            <!-- Navigation Bar -->
+            <nav class="flex justify-between items-center mb-6" data-aos="fade-down">
+                <p id="user-status" class="text-violet-200 text-sm font-mono">Connecting to cloud...</p>
+                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm flex items-center gap-2 transition-transform transform hover:scale-105">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+            </nav>
+
+            <!-- Header -->
+            <header class="text-center mb-8" data-aos="fade-down" data-aos-delay="100">
+                <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">
+                    CN CAD Growth Log
+                </h1>
+            </header>
+            
+            <!-- Dashboard Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- Monthly Chart -->
+                <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-lg flex flex-col" data-aos="fade-up">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-violet-200">This Month's Snapshot</h2>
+                        <button id="export-pdf-btn" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm flex items-center gap-2">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                           Export Report
+                        </button>
+                    </div>
+                    <div class="relative flex-grow min-h-[250px] sm:min-h-[300px]">
+                        <canvas id="monthlyGrowthChart"></canvas>
+                        <div id="chart-center-text" class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+                            <span id="growth-percentage" class="text-3xl sm:text-4xl font-bold">--%</span>
+                            <span class="text-sm text-violet-300">vs. last month</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Lifetime Summary Cards -->
+                <div class="flex flex-col gap-6" data-aos="fade-up" data-aos-delay="200">
+                    <div id="summary-income" class="glass-card rounded-2xl p-6 text-center shadow-lg flex-grow flex flex-col justify-center">
+                        <h2 class="text-lg font-medium text-green-300">Total Income (All Time)</h2>
+                        <p class="text-3xl font-bold mt-2">Rs 0.00</p>
+                    </div>
+                    <div id="summary-outgoings" class="glass-card rounded-2xl p-6 text-center shadow-lg flex-grow flex flex-col justify-center">
+                        <h2 class="text-lg font-medium text-red-300">Total Outgoings (All Time)</h2>
+                        <p class="text-3xl font-bold mt-2">Rs 0.00</p>
+                    </div>
+                    <div id="summary-net" class="glass-card rounded-2xl p-6 text-center shadow-lg flex-grow flex flex-col justify-center">
+                        <h2 class="text-lg font-medium text-blue-300">Net Profit (All Time)</h2>
+                        <p class="text-3xl font-bold mt-2">Rs 0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content: Forms & Tables -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card rounded-2xl p-6 shadow-lg" data-aos="fade-right">
+                    <h3 class="text-2xl font-bold mb-4 text-green-300">Add Income</h3>
+                    <form id="income-form" class="space-y-4">
+                        <input type="date" id="income-date" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="text" id="income-desc" placeholder="e.g., Affiliate Payout" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="text" id="income-category" placeholder="e.g., Advertising" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="number" id="income-amount" placeholder="Amount (in LKR)" min="0.01" step="0.01" class="form-input w-full p-3 rounded-lg" required>
+                        <button type="submit" class="w-full btn-primary text-white font-bold py-3 px-4 rounded-lg shadow-md">Add Income</button>
+                    </form>
+                    <div class="mt-6 h-96 overflow-y-auto">
+                        <table class="w-full text-left"><thead class="table-header sticky top-0"><tr><th class="p-3">Date</th><th class="p-3">Description</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center"></th></tr></thead><tbody id="income-table"></tbody></table>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-6 shadow-lg" data-aos="fade-left">
+                    <h3 class="text-2xl font-bold mb-4 text-red-300">Add Outgoing</h3>
+                    <form id="outgoings-form" class="space-y-4">
+                         <input type="date" id="outgoings-date" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="text" id="outgoings-desc" placeholder="e.g., Domain Renewal" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="text" id="outgoings-category" placeholder="e.g., Software" class="form-input w-full p-3 rounded-lg" required>
+                        <input type="number" id="outgoings-amount" placeholder="Amount (in LKR)" min="0.01" step="0.01" class="form-input w-full p-3 rounded-lg" required>
+                        <button type="submit" class="w-full btn-primary text-white font-bold py-3 px-4 rounded-lg shadow-md">Add Outgoing</button>
+                    </form>
+                    <div class="mt-6 h-96 overflow-y-auto">
+                        <table class="w-full text-left"><thead class="table-header sticky top-0"><tr><th class="p-3">Date</th><th class="p-3">Description</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center"></th></tr></thead><tbody id="outgoings-table"></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF Export Modal -->
+    <div id="pdf-modal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center hidden z-50 p-4">
+         <div class="glass-card rounded-2xl p-8 shadow-2xl w-full max-w-md" data-aos="zoom-in">
+            <h2 class="text-2xl font-bold mb-4">Generate Monthly Report</h2>
+            <form id="pdf-form"><div class="grid grid-cols-2 gap-4"><select id="pdf-month" class="form-input p-3 rounded-lg" required></select><input type="number" id="pdf-year" class="form-input p-3 rounded-lg" placeholder="Year" required></div><div class="mt-4"><textarea id="pdf-reflections" rows="4" class="form-input w-full p-3 rounded-lg" placeholder="Creative Reflections: Wins, lessons, goals..."></textarea></div><div class="mt-6 flex justify-end gap-4"><button type="button" id="cancel-pdf" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg">Generate PDF</button></div></form>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- App State ---
+        let income = [];
+        let outgoings = [];
+        let db, auth, userId, monthlyChart;
+
+        // --- DOM Elements ---
+        const loginView = document.getElementById('login-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        const userStatus = document.getElementById('user-status');
+        const incomeForm = document.getElementById('income-form');
+        const outgoingsForm = document.getElementById('outgoings-form');
+        const incomeTable = document.getElementById('income-table');
+        const outgoingsTable = document.getElementById('outgoings-table');
+        const summaryIncome = document.getElementById('summary-income').querySelector('p');
+        const summaryOutgoings = document.getElementById('summary-outgoings').querySelector('p');
+        const summaryNet = document.getElementById('summary-net').querySelector('p');
+        const growthPercentageEl = document.getElementById('growth-percentage');
+        const { jsPDF } = window.jspdf;
+        
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            AOS.init({ duration: 800, once: true, easing: 'ease-out-quad' });
+
+            // Check if user is already logged in via session storage
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+            
+            setupEventListeners();
+            initializeFirebase();
+        });
+
+        function initializeFirebase() {
+             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+            if (!firebaseConfigStr) { userStatus.textContent = "Error: Firebase configuration not found."; return; }
+
+            try {
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setupAuthListener(appId);
+            } catch (error) { userStatus.textContent = "Error initializing Firebase."; console.error("Firebase init error:", error); }
+        }
+        
+        // --- View Management ---
+        function showLogin() {
+            dashboardView.classList.add('hidden');
+            loginView.classList.remove('hidden');
+            AOS.refresh();
+        }
+
+        function showDashboard() {
+            loginView.classList.add('hidden');
+            dashboardView.classList.remove('hidden');
+            AOS.refresh();
+        }
+
+        // --- Login / Logout Logic ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            // Hardcoded credentials for demonstration
+            if (email === 'admin@growthlog.com' && password === 'password123') {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                loginError.classList.add('hidden');
+                showDashboard();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('isLoggedIn');
+            showLogin();
+        }
+        
+        // --- Firebase & Auth ---
+        function setupAuthListener(appId) {
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    userId = user.uid;
+                    userStatus.textContent = `User ID: ${userId}`;
+                    setupRealtimeListeners(appId, userId);
+                } else {
+                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (token) { signInWithCustomToken(auth, token).catch(e => console.error("Token sign-in error:", e)); } 
+                    else { signInAnonymously(auth).catch(e => console.error("Anon sign-in error:", e)); }
+                }
+            });
+        }
+
+        function setupRealtimeListeners(appId, userId) {
+            onSnapshot(collection(db, `/artifacts/${appId}/users/${userId}/income`), (snap) => { income = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
+            onSnapshot(collection(db, `/artifacts/${appId}/users/${userId}/outgoings`), (snap) => { outgoings = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(); });
+        }
+
+        function setupEventListeners() {
+            loginForm.addEventListener('submit', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+
+            incomeForm.addEventListener('submit', (e) => { e.preventDefault(); addTransaction('income'); incomeForm.reset(); });
+            outgoingsForm.addEventListener('submit', (e) => { e.preventDefault(); addTransaction('outgoings'); outgoingsForm.reset(); });
+            document.getElementById('export-pdf-btn').addEventListener('click', openPdfModal);
+            document.getElementById('cancel-pdf').addEventListener('click', closePdfModal);
+            document.getElementById('pdf-form').addEventListener('submit', handlePdfGeneration);
+        }
+
+        async function addTransaction(type) {
+            const date = document.getElementById(`${type}-date`).value;
+            const desc = document.getElementById(`${type}-desc`).value;
+            const category = document.getElementById(`${type}-category`).value;
+            const amount = parseFloat(document.getElementById(`${type}-amount`).value);
+            if (!date || !desc || !category || isNaN(amount) || amount <= 0 || !userId) return;
+            const transaction = { date, desc, category, amount };
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/${type}`), transaction).catch(e => console.error("Add error:", e));
+        }
+        
+        async function deleteTransaction(type, id) {
+            if(!userId) return;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            await deleteDoc(doc(db, `/artifacts/${appId}/users/${userId}/${type}/${id}`)).catch(e => console.error("Delete error:", e));
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('si-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+        }
+
+        // --- Rendering ---
+        function render() {
+            if (!userId) return;
+            renderTable('income', income, incomeTable);
+            renderTable('outgoings', outgoings, outgoingsTable);
+            updateSummary();
+            renderMonthlyChart();
+        }
+
+        function renderTable(type, data, tableElement) {
+            tableElement.innerHTML = '';
+            const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (sortedData.length === 0) { tableElement.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-gray-400">No cloud entries yet.</td></tr>`; return; }
+            sortedData.forEach(t => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700 table-row';
+                row.innerHTML = `<td class="p-3 whitespace-nowrap">${t.date}</td><td class="p-3"><div class="font-medium">${t.desc}</div><div class="text-sm text-gray-400">${t.category}</div></td><td class="p-3 text-right font-mono">${formatCurrency(t.amount)}</td><td class="p-3 text-center"><button class="delete-btn text-red-400 hover:text-red-200" data-id="${t.id}" data-type="${type}">&times;</button></td>`;
+                row.querySelector('.delete-btn').addEventListener('click', () => deleteTransaction(type, t.id));
+                tableElement.appendChild(row);
+            });
+        }
+        
+        function updateSummary() {
+            const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
+            const totalOutgoings = outgoings.reduce((sum, t) => sum + t.amount, 0);
+            const net = totalIncome - totalOutgoings;
+            summaryIncome.textContent = formatCurrency(totalIncome);
+            summaryOutgoings.textContent = formatCurrency(totalOutgoings);
+            summaryNet.textContent = formatCurrency(net);
+        }
+
+        // --- Chart Logic ---
+        function calculateMonthlyData() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const prevMonth = prevMonthDate.getMonth();
+            const prevMonthYear = prevMonthDate.getFullYear();
+            const filterByMonth = (data, month, year) => data.filter(t => { const d = new Date(t.date); return d.getMonth() === month && d.getFullYear() === year; });
+            const sumAmount = (data) => data.reduce((sum, t) => sum + t.amount, 0);
+            const currentMonthIncome = sumAmount(filterByMonth(income, currentMonth, currentYear));
+            const currentMonthOutgoings = sumAmount(filterByMonth(outgoings, currentMonth, currentYear));
+            const currentMonthNet = currentMonthIncome - currentMonthOutgoings;
+            const prevMonthIncome = sumAmount(filterByMonth(income, prevMonth, prevMonthYear));
+            const prevMonthOutgoings = sumAmount(filterByMonth(outgoings, prevMonth, prevMonthYear));
+            const prevMonthNet = prevMonthIncome - prevMonthOutgoings;
+            let growth = 0;
+            if (prevMonthNet !== 0) {
+                growth = ((currentMonthNet - prevMonthNet) / Math.abs(prevMonthNet)) * 100;
+            } else if (currentMonthNet > 0) {
+                growth = 100; 
+            }
+            return { currentMonthIncome, currentMonthOutgoings, growth };
+        }
+
+        function renderMonthlyChart() {
+            const { currentMonthIncome, currentMonthOutgoings, growth } = calculateMonthlyData();
+            const ctx = document.getElementById('monthlyGrowthChart').getContext('2d');
+            growthPercentageEl.textContent = `${growth.toFixed(1)}%`;
+            growthPercentageEl.classList.remove('text-green-400', 'text-red-400');
+            if(growth > 0) { growthPercentageEl.innerHTML = `&#9650; ${growth.toFixed(1)}%`; growthPercentageEl.classList.add('text-green-400'); } 
+            else if (growth < 0) { growthPercentageEl.innerHTML = `&#9660; ${Math.abs(growth).toFixed(1)}%`; growthPercentageEl.classList.add('text-red-400');}
+            if (monthlyChart) { monthlyChart.destroy(); }
+            monthlyChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Income', 'Outgoings'], datasets: [{ data: [currentMonthIncome || 0.1, currentMonthOutgoings || 0.1], backgroundColor: ['rgba(34, 197, 94, 0.7)', 'rgba(239, 68, 68, 0.7)'], borderColor: ['#22c55e', '#ef4444'], borderWidth: 2, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => formatCurrency(context.raw) } } } } });
+        }
+        
+        // --- PDF Generation ---
+        function openPdfModal() { 
+            const pdfModal = document.getElementById('pdf-modal');
+            const pdfMonthSelect = document.getElementById('pdf-month');
+            const pdfYearInput = document.getElementById('pdf-year');
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const now = new Date();
+            pdfMonthSelect.innerHTML = months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+            pdfMonthSelect.value = now.getMonth();
+            pdfYearInput.value = now.getFullYear();
+            document.getElementById('pdf-reflections').value = '';
+            pdfModal.classList.remove('hidden');
+        }
+        function closePdfModal() { document.getElementById('pdf-modal').classList.add('hidden'); }
+        function handlePdfGeneration(e) {
+            e.preventDefault();
+            const month = parseInt(document.getElementById('pdf-month').value);
+            const year = parseInt(document.getElementById('pdf-year').value);
+            const reflections = document.getElementById('pdf-reflections').value;
+            generatePdf(month, year, reflections);
+            closePdfModal();
+        }
+        function generatePdf(month, year, reflections) {
+            const doc = new jsPDF();
+            const monthName = document.getElementById('pdf-month').options[document.getElementById('pdf-month').selectedIndex].text;
+            const filteredIncome = income.filter(t => { const d = new Date(t.date); return d.getMonth() === month && d.getFullYear() === year; });
+            const filteredOutgoings = outgoings.filter(t => { const d = new Date(t.date); return d.getMonth() === month && d.getFullYear() === year; });
+            const totalIncome = filteredIncome.reduce((s, t) => s + t.amount, 0);
+            const totalOutgoings = filteredOutgoings.reduce((s, t) => s + t.amount, 0);
+            doc.setFontSize(22); doc.text(`Website Growth Log: ${monthName} ${year}`, 14, 22);
+            doc.setFontSize(11); doc.text(`All values in Sri Lankan Rupees (LKR)`, 14, 30);
+            doc.setFontSize(14); doc.text('Monthly Snapshot', 14, 45);
+            doc.setFontSize(12); doc.text(`Total Income: ${formatCurrency(totalIncome)}`, 14, 53);
+            doc.text(`Total Outgoings: ${formatCurrency(totalOutgoings)}`, 14, 61);
+            doc.text(`Net Profit: ${formatCurrency(totalIncome - totalOutgoings)}`, 14, 69);
+            let currentY = 80;
+            if (filteredIncome.length > 0) { doc.autoTable({ startY: currentY, head: [['Date', 'Description', 'Category', `Amount (LKR)`]], body: filteredIncome.map(t => [t.date, t.desc, t.category, formatCurrency(t.amount)]), headStyles: { fillColor: [22, 160, 133] } }); currentY = doc.autoTable.previous.finalY + 10; }
+            if (filteredOutgoings.length > 0) { doc.autoTable({ startY: currentY, head: [['Date', 'Description', 'Category', `Amount (LKR)`]], body: filteredOutgoings.map(t => [t.date, t.desc, t.category, formatCurrency(t.amount)]), headStyles: { fillColor: [192, 57, 43] } }); currentY = doc.autoTable.previous.finalY + 15; }
+            if(reflections){ doc.setFontSize(14); doc.text('Creative Reflections & Goals', 14, currentY); currentY += 8; doc.setFontSize(11); doc.text(doc.splitTextToSize(reflections, 180), 14, currentY); }
+            doc.save(`LKR_Report_${monthName}_${year}.pdf`);
+        }
+    </script>
+</body>
+</html>
+
